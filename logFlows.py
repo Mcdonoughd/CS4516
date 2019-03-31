@@ -34,9 +34,15 @@ class Burst:
 				return_str += "\n"
 			first = False
 
-			return_str += str(int(self.last_time - self.start_time)) + " " + str(fs)
+			return_str += self.int_to_time_str(int(self.last_time - self.start_time)) + " " + str(fs)
 		return return_str
 				
+	def int_to_time_str(self, time):
+		seconds = time % 60
+		minutes = (time // 60) % 60
+		hours = (time // 3600) % 12
+		return '%02d:%02d:%02d' % (hours, minutes, seconds)
+
 
 class Flow:
 	def __init__(self, protocol, src_a, src_p, dst_a, dst_p):
