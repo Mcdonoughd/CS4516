@@ -40,7 +40,7 @@ class Burst:
 	def int_to_time_str(self, time):
 		seconds = time % 60
 		minutes = (time // 60) % 60
-		hours = (time // 3600) % 12
+		hours = (time // 3600) % 100
 		return '%02d:%02d:%02d' % (hours, minutes, seconds)
 
 
@@ -63,7 +63,7 @@ class Flow:
 
 	# returns a human readable representation of the flow
 	def __str__(self):
-		return str(self.src_a) + " " + str(self.dst_a) + " " + str(self.src_p) + " " + str(self.dst_p)
+		return "%15s %15s %7s %7s" % (str(self.src_a), str(self.dst_a), str(self.src_p), str(self.dst_p))
 
 
 class FlowStats:
@@ -76,7 +76,7 @@ class FlowStats:
 	
 	# returns a human readable representation of the flows statistics	
 	def __str__(self):
-		return str(self.flow) + " " + str(self.sent_p) + " " + str(self.recieved_p) + " " + str(self.sent_b) + " " + str(self.recieved_b)
+		return "%s %3s %3s %6s %6s" % (str(self.flow), str(self.sent_p), str(self.recieved_p), str(self.sent_b), str(self.recieved_b))
 
 	# updates statistics based on the given flow
 	def add_flow(self, length, flow):
