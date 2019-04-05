@@ -1,6 +1,11 @@
 import pyshark
 import time
 
+# Phase2 logFlows.py
+# by Team 18 (Cole Winsor & Daniel McDonough)
+# This script monitors packets and produces log flows once a packet burst has concluded
+
+
 class Burst:
 
 	def __init__(self, current_time, start_time=0):
@@ -130,14 +135,19 @@ class BurstLogger:
 	# passed, creates a new burst
 	def add_flow(self, time, length, flow):
 		if len(self.bursts) == 0:
-			new_burst = Burst(time, start_time=self.start_time)
+			new_burst = Burst(time, start_time=int(self.start_time))
 			self.bursts.append(new_burst)
 		if time - self.bursts[-1].last_time > 1:
 			print(str(self.bursts[-1]))
-			new_burst = Burst(time, start_time=self.start_time)
+			new_burst = Burst(time, start_time=int(self.start_time))
 			self.bursts.append(new_burst)
 		self.bursts[-1].add_flow(time, length, flow)
 
-# starts the loging process
-BurstLogger()
+def main():
+	# starts the loging process	
+	BurstLogger()
+
+if __name__ == "__main__":
+	main()
+
 
