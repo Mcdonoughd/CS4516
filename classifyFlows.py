@@ -123,18 +123,20 @@ class CaptureClassifier:
 	def __init__(self, file, printing=True):
 		self.bursts = []
 		self.start_time = time.time()
+		
+		print("Parsing Capture: " + str(file))
+		
 		file = open(file)
-
-		print("Parsing Capture...")
-
 		capture = pyshark.FileCapture(file, display_filter='tcp or udp')
 		for num_pkt, packet in enumerate(capture):
 			self.packet_callback(packet)
 		
+		capture.close()
+
 		print("Finished Parsing. # bursts: " + str(len(self.bursts)))
 		
-		if printing:
-			self.print_bursts()
+		#if printing:
+			#self.print_bursts()
 			#self.print_classified_bursts()
 
 	def get_io_vectors(self, app):
@@ -182,33 +184,22 @@ class Classifier:
 	def __init__(self):
 		self.path = 'classifier_save.pkl'
 		self.classifier = joblib.load(self.path)
-		self.app_map = {}
-		self.app_map['browser'] = [1,0,0,0,0]
-		self.app_map['youtube'] = [0,1,0,0,0]
-		self.app_map['weather'] = [0,0,1,0,0]
-		self.app_map['news'] = [0,0,0,1,0]
-		self.app_map['ninja'] = [0,0,0,0,1]
 		print("Loading Classifier")
 
 	def train(self, vector_in, vector_out):
+		print("Trining Classifier")
 		X = numpy.array(vector_in)
 		y = numpy.array(vector_out)
 		self.classifier.fit(X, y)
+		print("Finished Training")
 
 	def save(self):
 		joblib.dump(self.classifier, self.path)
 		print("Saving Classifier")
 
 	def classify(self, vector_in):
-		app = None
-		max_score = -math.inf
-		# this is definitely wrong. Need to change this later
-		for key, value in self.app_map.items():
-			score = self.classifier.score(vector_in, value)
-			if max_score < score:
-				app = key
-				max_score = score
-		return app
+		X = numpy.array(vector_in)
+		return self.classifier.predict(X)
 
 
 #Global state
@@ -229,9 +220,7 @@ def main():
 			for app in app_list:
 				app_path = data_path + app + "/"
 				for index in range(capture_range[0], capture_range[1]):
-					#time.sleep(1)
 					capture_path = app_path + "test" + str(index) + ".pcap"
-					print(str(capture_path))
 					capture = CaptureClassifier(capture_path, printing=False)
 					v_io = capture.get_io_vectors(app)
 					v_in += v_io[0]
