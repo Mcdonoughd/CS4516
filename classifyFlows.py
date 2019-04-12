@@ -4,6 +4,7 @@ import sys
 import sklearn
 import numpy
 import joblib
+import time
 from sklearn.svm import SVC
 
 # Phase3 classifyFlows.py
@@ -114,33 +115,34 @@ class FlowStats:
 		return False
 
 	def get_vector(self):
-		return [] #TODO define flow vector
+		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b] # TODO decide the best features to use
 
 
 class CaptureClassifier:
-	def __init__(self, file, app=None):
+
+	def __init__(self, file, printing=True):
 		self.bursts = []
 		self.start_time = time.time()
 		file = open(file)
+
+		print("Parsing Capture...")
+
 		capture = pyshark.FileCapture(file, display_filter='tcp or udp')
 		for num_pkt, packet in enumerate(capture):
 			self.packet_callback(packet)
-		self.classifier = Classifier()
 		
-		#If in training mode
-		if app is not None:
-			self.train(app)
-			return
+		print("Finished Parsing. # bursts: " + str(len(self.bursts)))
+		
+		if printing:
+			self.print_bursts()
+			#self.print_classified_bursts()
 
-		self.print_bursts()
-		#self.print_classified_bursts()
-
-	def train(self, app):
+	def get_io_vectors(self, app):
 		training_in = [] 
 		for burst in self.bursts:
 			training_in += burst.get_vectors()
 		training_out = [app] * len(training_in)
-		self.classifier.train(training_in, training_out)
+		return training_in, training_out
 		
 
 	def packet_callback(self, pkt):
@@ -186,12 +188,16 @@ class Classifier:
 		self.app_map['weather'] = [0,0,1,0,0]
 		self.app_map['news'] = [0,0,0,1,0]
 		self.app_map['ninja'] = [0,0,0,0,1]
+		print("Loading Classifier")
 
 	def train(self, vector_in, vector_out):
-		self.classifier.fit(numpy.array(vector_in),numpy.array(vector_out))
+		X = numpy.array(vector_in)
+		y = numpy.array(vector_out)
+		self.classifier.fit(X, y)
 
 	def save(self):
 		joblib.dump(self.classifier, self.path)
+		print("Saving Classifier")
 
 	def classify(self, vector_in):
 		app = None
@@ -205,22 +211,42 @@ class Classifier:
 		return app
 
 
+#Global state
+#probably just move this to another class at some point
+app_list = ["browser", "youtube", "weather", "news", "ninja"]
+capture_range = [1, 4]
+
 def main():
 	input = sys.argv
 	if len(input) < 2:
 		print("Capture file is required")
 	if len(input) == 2:
-		if input[1] == '-c':
-			print("Creating new classifier")
+		if input[1] == '-t':
+			print("Classifier Training")
+			v_in = []
+			v_out = []
+			data_path = "./data/"
+			for app in app_list:
+				app_path = data_path + app + "/"
+				for index in range(capture_range[0], capture_range[1]):
+					#time.sleep(1)
+					capture_path = app_path + "test" + str(index) + ".pcap"
+					print(str(capture_path))
+					capture = CaptureClassifier(capture_path, printing=False)
+					v_io = capture.get_io_vectors(app)
+					v_in += v_io[0]
+					v_out += v_io[1]
+			classifier = Classifier()
+			classifier.train(v_in, v_out)
+			classifier.save()
+		elif input[1] == '-c':
+			print("Creat New Classifier")
 			classifier = SVC()
-			joblib.dump(classifier, "classifier_save.pkl")
+			joblib.dump(classifier, "classifier_save.pkl")	
 		else:
-			print("Classifying capture file...")
+			print("Capture Classification")
 			CaptureClassifier(input[1])
-	if len(input) == 3:
-		print("Training classifier...")
-		CaptureClassifier(input[1], app=input[2])
-	if len(input) > 3:
+	if len(input) > 2:
 		print("Too many arguments")
 
 if __name__ == "__main__":
