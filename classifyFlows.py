@@ -127,15 +127,15 @@ class FlowStats:
 			return True
 		return False
 
-	def get_std(length_array):
+	def get_std(self, length_array):
 		if len(length_array) > 1:
 			return statistics.stdev(length_array)
-		else 
+		else:
 			return 0;
 
 
 	def get_vector(self):
-		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b,get_std(self.sent_length)] # TODO decide the best features to use
+		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b, self.get_std(self.sent_length)] # TODO decide the best features to use
 
 
 class CaptureClassifier:
@@ -168,7 +168,6 @@ class CaptureClassifier:
 		
 
 	def packet_callback(self, pkt):
-		print(pkt.ip.src)
 		current_time = self.time_to_int(pkt.sniff_time)
 		length = int(pkt.captured_length)
 		protocol = pkt.transport_layer
