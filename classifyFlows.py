@@ -63,13 +63,12 @@ class Burst:
 		return [flow.get_vector() for flow in self.flows]
 
 class Flow:
-	def __init__(self, protocol, src_a, src_p, dst_a, dst_p, pkt_size):
+	def __init__(self, protocol, src_a, src_p, dst_a, dst_p):
 		self.protocol = protocol
 		self.src_a = src_a
 		self.src_p = src_p
 		self.dst_a = dst_a
 		self.dst_p = dst_p
-		self.pkt_size = pkt_size
 	
 	# returns true if the flows are equivalent and false otherwise
 	def __eq__(self, other):
