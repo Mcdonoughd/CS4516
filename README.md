@@ -39,14 +39,15 @@ Once the Required packages are installed, you can run the code by
 
 
 Options are as follows (you may only do one at a time):
-1. -t: This tells the script to read the saved classifier file and run the training data
-2. -c Produces a saved classifier file 'classifier_save.pkl' in the root directory
-3. 'pcap file' Runs a pcap file and determines what
+1. -t: This tells the script to read the saved classifier files and run the training data
+2. -c: Produces a saved classifier file 'classifier_save.pkl' in the root directory
+3. -b: This tells the script to read the saved classifier files and run the training data
+3. 'pcap file': Runs a pcap file to determine bursts and classify flows
 
 # Classification Limitations
-1. We only analyze 5 dimensions: number and sizes of packets sent and received, and the Standard Deviation of the the size of the sent packets.
+1. We only analyze 7 dimensions: number and sizes of packets sent and received, the standard deviation of the bytes sent and recieved, and the number of bursts in the file
 2. Because of the way Fruit ninja sends packets and its large diversity of packets, this classifier tends to mistake other packets for it.
-
+3. Due to this, our classifier is roughly 66% accurate.
 
 #How it works
 1. Collection of data
