@@ -109,13 +109,13 @@ class FlowStats:
 			self.sent_p += 1
 			self.sent_b += length
 			self.all_flows += [flow]
-			self.sent_length += [flow]
+			self.sent_length += [length]
 			
 		else:
 			self.recieved_p += 1
 			self.recieved_b += length
 			self.all_flows += [flow]
-			self.recieved_length += [flow]
+			self.recieved_length += [length]
 		return True
 			
 	# returns true if the given flow is in the sending direction
@@ -141,7 +141,6 @@ class CaptureClassifier:
 		
 		file = open(file)
 		capture = pyshark.FileCapture(file, display_filter='tcp or udp')
-		print(len(capture))
 		for num_pkt, packet in enumerate(capture):
 			self.packet_callback(packet)
 		
