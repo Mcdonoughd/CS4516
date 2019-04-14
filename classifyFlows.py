@@ -116,6 +116,7 @@ class FlowStats:
 			self.recieved_b += length
 			self.all_flows += [flow]
 			self.recieved_length += [length]
+
 		return True
 			
 	# returns true if the given flow is in the sending direction
@@ -126,9 +127,15 @@ class FlowStats:
 			return True
 		return False
 
+	def get_std(length_array):
+		if len(length_array) > 1:
+			return statistics.stdev(length_array)
+		else 
+			return 0;
+
 
 	def get_vector(self):
-		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b,statistics.stdev(self.sent_length)] # TODO decide the best features to use
+		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b,get_std(self.sent_length)] # TODO decide the best features to use
 
 
 class CaptureClassifier:
