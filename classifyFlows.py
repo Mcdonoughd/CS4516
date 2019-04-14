@@ -63,13 +63,12 @@ class Burst:
 		return [flow.get_vector() for flow in self.flows]
 
 class Flow:
-	def __init__(self, protocol, src_a, src_p, dst_a, dst_p, pkt_size):
+	def __init__(self, protocol, src_a, src_p, dst_a, dst_p):
 		self.protocol = protocol
 		self.src_a = src_a
 		self.src_p = src_p
 		self.dst_a = dst_a
 		self.dst_p = dst_p
-		self.pkt_size = pkt_size
 	
 	# returns true if the flows are equivalent and false otherwise
 	def __eq__(self, other):
@@ -110,13 +109,14 @@ class FlowStats:
 			self.sent_p += 1
 			self.sent_b += length
 			self.all_flows += [flow]
-			self.sent_length += [flow]
+			self.sent_length += [length]
 			
 		else:
 			self.recieved_p += 1
 			self.recieved_b += length
 			self.all_flows += [flow]
-			self.recieved_length += [flow]
+			self.recieved_length += [length]
+
 		return True
 			
 	# returns true if the given flow is in the sending direction
@@ -127,9 +127,15 @@ class FlowStats:
 			return True
 		return False
 
+	def get_std(self, length_array):
+		if len(length_array) > 1:
+			return statistics.stdev(length_array)
+		else:
+			return 0;
+
 
 	def get_vector(self):
-		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b,statistics.stdev(self.sent_length)] # TODO decide the best features to use
+		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b, self.get_std(self.sent_length)] # TODO decide the best features to use
 
 
 class CaptureClassifier:
@@ -142,7 +148,6 @@ class CaptureClassifier:
 		
 		file = open(file)
 		capture = pyshark.FileCapture(file, display_filter='tcp or udp')
-		print(len(capture))
 		for num_pkt, packet in enumerate(capture):
 			self.packet_callback(packet)
 		
@@ -163,7 +168,6 @@ class CaptureClassifier:
 		
 
 	def packet_callback(self, pkt):
-		print(pkt.ip.src)
 		current_time = self.time_to_int(pkt.sniff_time)
 		length = int(pkt.captured_length)
 		protocol = pkt.transport_layer
