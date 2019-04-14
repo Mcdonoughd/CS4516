@@ -212,7 +212,10 @@ class CaptureClassifier:
 	
 	def print_classified_bursts(self):
 		classifier = Classifier()
+		i = 1
 		for burst in self.bursts:
+			print("\nBurst: "+str(i))
+			i+=1
 			print(burst.classify_str(classifier, len(self.bursts)))
 
 class Classifier:
