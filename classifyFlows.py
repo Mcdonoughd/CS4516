@@ -53,6 +53,16 @@ class Burst:
 			return_str += self.int_to_time_str(int(self.last_time - self.start_time)) + " " + str(fs)
 		return return_str
 				
+	def classify_str(self, classifier, num_bursts):
+		return_str = ""
+		first = True
+		for fs in self.flows:
+			if not first:
+				return_str += '\n'
+			first = False
+			return_str += self.int_to_time_str(int(self.last_time - self.start_time)) + " " + str(fs) + " " + fs.classify(classifier, num_bursts)
+		return return_str
+
 	def int_to_time_str(self, time):
 		seconds = time % 60
 		minutes = (time // 60) % 60
@@ -135,8 +145,10 @@ class FlowStats:
 
 
 	def get_vector(self):
-		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b, self.get_std(self.sent_length)] # TODO decide the best features to use
-
+		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b, self.get_std(self.sent_length), self.get_std(self.recieved_length)] # TODO decide the best features to use
+	
+	def classify(self, classifier, num_bursts):
+		return classifier.classify([self.get_vector() + [num_bursts]])[0] 
 
 class CaptureClassifier:
 
@@ -162,7 +174,9 @@ class CaptureClassifier:
 	def get_io_vectors(self, app):
 		training_in = [] 
 		for burst in self.bursts:
-			training_in += burst.get_vectors()
+			complete_vectors = [vector + [len(self.bursts)] for vector in burst.get_vectors()]
+			training_in += complete_vectors
+			# training_in += burst.get_vectors() + [len(self.bursts)]
 		training_out = [app] * len(training_in)
 		return training_in, training_out
 		
@@ -197,7 +211,9 @@ class CaptureClassifier:
 			print(str(burst))
 	
 	def print_classified_bursts(self):
-		pass
+		classifier = Classifier()
+		for burst in self.bursts:
+			print(burst.classify_str(classifier, len(self.bursts)))
 
 class Classifier:
 	
@@ -218,6 +234,7 @@ class Classifier:
 		print("Saving Classifier")
 
 	def classify(self, vector_in):
+		print("Classifying...")
 		X = numpy.array(vector_in)
 		return self.classifier.predict(X)
 
@@ -225,7 +242,7 @@ class Classifier:
 #Global state
 #probably just move this to another class at some point
 app_list = ["browser", "youtube", "weather", "news", "ninja"]
-capture_range = [1, 4]
+capture_range = [1, 26]
 
 def main():
 	input = sys.argv
@@ -254,7 +271,8 @@ def main():
 			joblib.dump(classifier, "classifier_save.pkl")	
 		else:
 			print("Capture Classification")
-			CaptureClassifier(input[1])
+			capture = CaptureClassifier(input[1])
+			capture.print_classified_bursts()
 	if len(input) > 2:
 		print("Too many arguments")
 
