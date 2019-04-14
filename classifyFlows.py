@@ -142,6 +142,7 @@ class CaptureClassifier:
 		
 		file = open(file)
 		capture = pyshark.FileCapture(file, display_filter='tcp or udp')
+		print(len(capture))
 		for num_pkt, packet in enumerate(capture):
 			self.packet_callback(packet)
 		
