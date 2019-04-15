@@ -226,7 +226,7 @@ class Classifier:
 		print("Loading Classifier")
 
 	def train(self, vector_in, vector_out):
-		print("Trining Classifier")
+		print("Training Classifier")
 		X = numpy.array(vector_in)
 		y = numpy.array(vector_out)
 		self.classifier.fit(X, y)
