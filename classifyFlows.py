@@ -245,7 +245,8 @@ class Classifier:
 #Global state
 #probably just move this to another class at some point
 app_list = ["browser", "youtube", "weather", "news", "ninja"]
-capture_range = [1, 26]
+capture_range = [1, 36]
+analysis_range = [36, 51]
 
 def main():
 	input = sys.argv
@@ -268,9 +269,32 @@ def main():
 			classifier = Classifier()
 			classifier.train(v_in, v_out)
 			classifier.save()
+		elif input[1] == '-b':
+			print("Analyzing Classifier")
+			v_in = []
+			v_out = []
+			data_path = "./data/"
+			for app in app_list:
+				app_path = data_path + app + "/"
+				for index in range(analysis_range[0], analysis_range[1]):
+					capture_path = app_path + "test" + str(index) + ".pcap"
+					capture = CaptureClassifier(capture_path, printing=False)
+					v_io = capture.get_io_vectors(app)
+					v_in += v_io[0]
+					v_out += v_io[1]
+			classifier = Classifier()
+			output = classifier.classify(v_in)
+			correct = 0
+			incorrect = 0
+			for i in range(0, len(output)):
+				if v_out[i] == output[i]:
+					correct += 1
+				else:
+					incorrect += 1
+			print("Correct: " + str(correct / (correct + incorrect)) + " Incorrect: " + str(incorrect / (correct + incorrect)))
 		elif input[1] == '-c':
 			print("Create New Classifier")
-			classifier = SVC()
+			classifier = SVC(class_weight='balanced')
 			joblib.dump(classifier, "classifier_save.pkl")	
 		else:
 			print("Capture Classification")
