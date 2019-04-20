@@ -249,7 +249,7 @@ class LiveClassifier:
 			new_burst = Burst(time, start_time=int(self.start_time))
 			self.bursts.append(new_burst)
 		if time - self.bursts[-1].last_time > 1:
-			print(bursts[-1].classify_str(self.classifier, len(self.bursts))) # TODO remove len(bursts from the training)
+			print(self.bursts[-1].classify_str(self.classifier, len(self.bursts))) # TODO remove len(bursts from the training)
 			new_burst = Burst(time, start_time=int(self.start_time))
 			self.bursts.append(new_burst)
 		self.bursts[-1].add_flow(time, length, flow)
