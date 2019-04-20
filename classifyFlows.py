@@ -166,10 +166,6 @@ class CaptureClassifier:
 		capture.close()
 
 		print("Finished Parsing. # bursts: " + str(len(self.bursts)))
-		
-		#if printing:
-			#self.print_bursts()
-			#self.print_classified_bursts()
 
 	def get_io_vectors(self, app):
 		training_in = [] 
@@ -217,6 +213,46 @@ class CaptureClassifier:
 			print("\nBurst: "+str(i))
 			i+=1
 			print(burst.classify_str(classifier, len(self.bursts)))
+
+class BurstClassifier:
+    
+	def __init__(self):
+		self.bursts = []
+		self.start_time = time.time()
+		self.classifier = Classifier()
+		# starts the packet capturing, only looks at tcp and udp packets
+		capture = pyshark.LiveCapture(interface='eth1', bpf_filter='tcp or udp')
+		capture.apply_on_packets(self.packet_callback)
+
+	# runs for each packet. Creates flow from packet information
+	# and appends the flow to the current burst
+	def packet_callback(self, pkt):
+		# get the current time
+		current_time = time.time()
+	
+		# get the needed packet information
+		length = int(pkt.captured_length)
+		protocol = pkt.transport_layer
+		source_ip = pkt.ip.src
+		source_port = pkt[pkt.transport_layer].srcport
+		destination_ip = pkt.ip.dst
+		destination_port = pkt[pkt.transport_layer].dstport
+	
+		#handle adding the packet
+		self.add_flow(current_time, length, Flow(protocol, source_ip, source_port, destination_ip, destination_port))
+
+	# appends the given flow to the current burst
+	# if the current burst is more than 1 second
+	# passed, creates a new burst
+	def add_flow(self, time, length, flow):
+		if len(self.bursts) == 0:
+			new_burst = Burst(time, start_time=int(self.start_time))
+			self.bursts.append(new_burst)
+		if time - self.bursts[-1].last_time > 1:
+			print(bursts[-1].classify_str(self.classifier, len(self.bursts))) # TODO remove len(bursts from the training)
+			new_burst = Burst(time, start_time=int(self.start_time))
+			self.bursts.append(new_burst)
+		self.bursts[-1].add_flow(time, length, flow)
 
 class Classifier:
 	
