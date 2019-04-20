@@ -70,7 +70,7 @@ class Burst:
 		return '%02d:%02d:%02d' % (hours, minutes, seconds)
 
 	def get_vectors(self):
-		return [flow.get_vector() for flow in self.flows]
+		return [flow.get_vector() + [len(self.flows)] for flow in self.flows]
 
 class Flow:
 	def __init__(self, protocol, src_a, src_p, dst_a, dst_p):
