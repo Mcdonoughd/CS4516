@@ -53,14 +53,14 @@ class Burst:
 			return_str += self.int_to_time_str(int(self.last_time - self.start_time)) + " " + str(fs)
 		return return_str
 				
-	def classify_str(self, classifier, num_bursts):
+	def classify_str(self, classifier):
 		return_str = ""
 		first = True
 		for fs in self.flows:
 			if not first:
 				return_str += '\n'
 			first = False
-			return_str += self.int_to_time_str(int(self.last_time - self.start_time)) + " " + str(fs) + " " + fs.classify(classifier, num_bursts)
+			return_str += self.int_to_time_str(int(self.last_time - self.start_time)) + " " + str(fs) + " " + fs.classify(classifier, len(self.flows))
 		return return_str
 
 	def int_to_time_str(self, time):
@@ -140,15 +140,14 @@ class FlowStats:
 	def get_std(self, length_array):
 		if len(length_array) > 1:
 			return statistics.stdev(length_array)
-		else:
-			return 0;
+		return 0
 
 
 	def get_vector(self):
 		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b, self.get_std(self.sent_length), self.get_std(self.recieved_length)] # TODO decide the best features to use
 	
-	def classify(self, classifier, num_bursts):
-		return classifier.classify([self.get_vector() + [num_bursts]])[0] 
+	def classify(self, classifier, num_flows):
+		return classifier.classify([self.get_vector() + [num_flows]])[0] 
 
 class CaptureClassifier:
 
@@ -160,7 +159,7 @@ class CaptureClassifier:
 		
 		file = open(file)
 		capture = pyshark.FileCapture(file, display_filter='tcp or udp and not arp')
-		for num_pkt, packet in enumerate(capture):
+		for _, packet in enumerate(capture):
 			self.packet_callback(packet)
 		
 		capture.close()
@@ -170,9 +169,8 @@ class CaptureClassifier:
 	def get_io_vectors(self, app):
 		training_in = [] 
 		for burst in self.bursts:
-			complete_vectors = [vector + [len(self.bursts)] for vector in burst.get_vectors()]
+			complete_vectors = [vector for vector in burst.get_vectors()]
 			training_in += complete_vectors
-			# training_in += burst.get_vectors() + [len(self.bursts)]
 		training_out = [app] * len(training_in)
 		return training_in, training_out
 		
@@ -212,7 +210,7 @@ class CaptureClassifier:
 		for burst in self.bursts:
 			print("\nBurst: "+str(i))
 			i+=1
-			print(burst.classify_str(classifier, len(self.bursts)))
+			print(burst.classify_str(classifier))
 
 class LiveClassifier:
     
@@ -249,7 +247,7 @@ class LiveClassifier:
 			new_burst = Burst(time, start_time=int(self.start_time))
 			self.bursts.append(new_burst)
 		if time - self.bursts[-1].last_time > 1:
-			print(self.bursts[-1].classify_str(self.classifier, len(self.bursts))) # TODO remove len(bursts from the training)
+			print(self.bursts[-1].classify_str(self.classifier)) # TODO remove len(bursts from the training)
 			new_burst = Burst(time, start_time=int(self.start_time))
 			self.bursts.append(new_burst)
 		self.bursts[-1].add_flow(time, length, flow)
@@ -280,12 +278,13 @@ class Classifier:
 
 #Global state
 #probably just move this to another class at some point
-app_list = ["browser", "youtube", "weather", "news", "ninja"]
-capture_range = [1, 36]
-analysis_range = [36, 51]
+
 
 def main():
 	input = sys.argv
+	app_list = ["browser", "youtube", "weather", "news", "ninja"]
+	capture_range = [1, 36]
+	analysis_range = [36, 51]
 	if len(input) < 2:
 		print("Capture file is required")
 	if len(input) == 2:
