@@ -159,7 +159,7 @@ class CaptureClassifier:
 		print("Parsing Capture: " + str(file))
 		
 		file = open(file)
-		capture = pyshark.FileCapture(file, display_filter='tcp or udp')
+		capture = pyshark.FileCapture(file, display_filter='tcp or udp and not arp')
 		for num_pkt, packet in enumerate(capture):
 			self.packet_callback(packet)
 		
@@ -221,7 +221,7 @@ class LiveClassifier:
 		self.start_time = time.time()
 		self.classifier = Classifier()
 		# starts the packet capturing, only looks at tcp and udp packets
-		capture = pyshark.LiveCapture(interface='eth1', bpf_filter='tcp or udp')
+		capture = pyshark.LiveCapture(interface='eth1', bpf_filter='tcp or udp and not arp')
 		capture.apply_on_packets(self.packet_callback)
 
 	# runs for each packet. Creates flow from packet information
