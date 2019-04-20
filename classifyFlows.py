@@ -247,7 +247,7 @@ class LiveClassifier:
 			new_burst = Burst(time, start_time=int(self.start_time))
 			self.bursts.append(new_burst)
 		if time - self.bursts[-1].last_time > 1:
-			print(self.bursts[-1].classify_str(self.classifier)) # TODO remove len(bursts from the training)
+			print(self.bursts[-1].classify_str(self.classifier))
 			new_burst = Burst(time, start_time=int(self.start_time))
 			self.bursts.append(new_burst)
 		self.bursts[-1].add_flow(time, length, flow)
@@ -283,54 +283,16 @@ class Classifier:
 def main():
 	input = sys.argv
 	app_list = ["browser", "youtube", "weather", "news", "ninja"]
-	capture_range = [1, 36]
-	analysis_range = [36, 51]
+	capture_range = [1, 36, 51]
 	if len(input) < 2:
 		print("Capture file is required")
 	if len(input) == 2:
 		if input[1] == '-t':
-			print("Classifier Training")
-			v_in = []
-			v_out = []
-			data_path = "./data/"
-			for app in app_list:
-				app_path = data_path + app + "/"
-				for index in range(capture_range[0], capture_range[1]):
-					capture_path = app_path + "test" + str(index) + ".pcap"
-					capture = CaptureClassifier(capture_path, printing=False)
-					v_io = capture.get_io_vectors(app)
-					v_in += v_io[0]
-					v_out += v_io[1]
-			classifier = Classifier()
-			classifier.train(v_in, v_out)
-			classifier.save()
+			train_classifier(app_list, capture_range[0], capture_range[1])
 		elif input[1] == '-b':
-			print("Analyzing Classifier")
-			v_in = []
-			v_out = []
-			data_path = "./data/"
-			for app in app_list:
-				app_path = data_path + app + "/"
-				for index in range(analysis_range[0], analysis_range[1]):
-					capture_path = app_path + "test" + str(index) + ".pcap"
-					capture = CaptureClassifier(capture_path, printing=False)
-					v_io = capture.get_io_vectors(app)
-					v_in += v_io[0]
-					v_out += v_io[1]
-			classifier = Classifier()
-			output = classifier.classify(v_in)
-			correct = 0
-			incorrect = 0
-			for i in range(0, len(output)):
-				if v_out[i] == output[i]:
-					correct += 1
-				else:
-					incorrect += 1
-			print("Correct: " + str(correct / (correct + incorrect)) + " Incorrect: " + str(incorrect / (correct + incorrect)))
+			analyze_classifier(app_list, capture_range[1], capture_range[2])
 		elif input[1] == '-c':
-			print("Create New Classifier")
-			classifier = SVC(class_weight='balanced')
-			joblib.dump(classifier, "classifier_save.pkl")
+			create_classifier()
 		elif input[1] == '-l':
 			print("Live Classification")
 			capture = LiveClassifier()
@@ -340,6 +302,58 @@ def main():
 			capture.print_classified_bursts()
 	if len(input) > 2:
 		print("Too many arguments")
+
+def train_classifier(app_list, low, high):
+	print("Classifier Training")
+	v_in = []
+	v_out = []
+	data_path = "./data/"
+	for app in app_list:
+		app_path = data_path + app + "/"
+		for index in range(low, high):
+			capture_path = app_path + "test" + str(index) + ".pcap"
+			capture = CaptureClassifier(capture_path, printing=False)
+			v_io = capture.get_io_vectors(app)
+			v_in += v_io[0]
+			v_out += v_io[1]
+	classifier = Classifier()
+	classifier.train(v_in, v_out)
+	classifier.save()
+
+def analyze_classifier(app_list, low, high):
+	print("Analyzing Classifier")
+	v_in = []
+	v_out = []
+	data_path = "./data/"
+	for app in app_list:
+		app_path = data_path + app + "/"
+		for index in range(low, high):
+			capture_path = app_path + "test" + str(index) + ".pcap"
+			capture = CaptureClassifier(capture_path, printing=False)
+			v_io = capture.get_io_vectors(app)
+			v_in += v_io[0]
+			v_out += v_io[1]
+	classifier = Classifier()
+	output = classifier.classify(v_in)
+	correct = 0
+	correct_typed = {app: 0 for app in app_list}
+	incorrect = 0
+	incorrect_typed = {app: 0 for app in app_list}
+	for i in range(0, len(output)):
+		if v_out[i] == output[i]:
+			correct += 1
+			correct_typed[output[i]] += 1
+		else:
+			incorrect += 1
+			incorrect_typed[output[i]] += 1
+	for app in app_list:
+    		print("App: " + str(app) + " " + "Correct: " + str(correct / (correct + incorrect)) + " Incorrect: " + str(incorrect / (correct + incorrect)))
+	print("Overall: Correct: " + str(correct / (correct + incorrect)) + " Incorrect: " + str(incorrect / (correct + incorrect)))
+
+def create_classifier():
+	print("Create New Classifier")
+	classifier = SVC(class_weight='balanced')
+	joblib.dump(classifier, "classifier_save.pkl")
 
 if __name__ == "__main__":
 	main()
