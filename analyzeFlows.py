@@ -145,7 +145,7 @@ class FlowStats:
 
 
 	def get_vector(self):
-		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b, self.get_std(self.sent_length), self.get_std(self.recieved_length) ] # TODO decide the best features to use
+		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b, self.get_std(self.sent_length), self.get_std(self.recieved_length),len(self.all_flows) ] # TODO decide the best features to use
 	
 	def classify(self, classifier, num_bursts):
 		return classifier.classify([self.get_vector() + [num_bursts]])[0] 
