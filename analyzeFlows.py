@@ -3,8 +3,6 @@
 # by Team 18 (Cole Winsor & Daniel McDonough)
 # This script monitors packets and produces log flows once a packet burst has concluded
 
-
-
 import pyshark
 import time
 import sys
