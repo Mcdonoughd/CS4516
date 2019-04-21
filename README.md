@@ -59,7 +59,6 @@ Notes:
 - Fruit Ninja tended to have large ranges of packet sizes
 
 
-
 2. Flow
 A flow as we defined it, is the set of all data that flow within the single packet burst. Here we analyze a flow as the number and sizes of packets sent and received as well as the Standard Deviation of the the size of the sent packets.
 3. Cleaning Data
