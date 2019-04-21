@@ -145,7 +145,7 @@ class FlowStats:
 
 
 	def get_vector(self):
-		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b, self.get_std(self.sent_length), self.get_std(self.recieved_length),len(self.all_flows) ] # TODO decide the best features to use
+		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b, self.get_std(self.sent_length), self.get_std(self.recieved_length) ] # TODO decide the best features to use
 	
 	def classify(self, classifier, num_bursts):
 		return classifier.classify([self.get_vector() + [num_bursts]])[0] 
@@ -262,7 +262,7 @@ class Classifier:
 		print("Loading Classifier")
 
 	def train(self, vector_in, vector_out):
-		print("Trining Classifier")
+		print("Training Classifier")
 		X = numpy.array(vector_in)
 		y = numpy.array(vector_out)
 		self.classifier.fit(X, y)
@@ -286,7 +286,7 @@ analysis_range = [36, 51]
 
 #prints the help state
 def help():
-	print("To run the program, please choose one of the following commands: \n\t PCAP File: Analyze the given file and classify its flows  \n\t -t: Trains classifier and produces classifier file \n\t -c: Saves classifier file \n\t -l: Starts live analysis of network traffic \n\t -h: prints help command ")
+	print("To run the program, please choose one of the following commands: \n\t PCAP File: Analyze the given file and classify its flows  \n\t -t: Trains classifier \n\t -c: Makes classifier file \n\t -b: Tests the Classifier  \n\t -l: Starts live analysis of network traffic \n\t -h: prints help command ")
 
 def main():
 	input = sys.argv
