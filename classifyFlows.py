@@ -347,7 +347,10 @@ def analyze_classifier(app_list, low, high):
 			incorrect += 1
 			incorrect_typed[output[i]] += 1
 	for app in app_list:
-    		print("App: " + str(app) + " " + "Correct: " + str(correct / (correct + incorrect)) + " Incorrect: " + str(incorrect / (correct + incorrect)))
+		app_correct = correct_typed[app] 
+		app_incorrect = incorrect_typed[app]
+		app_total = app_correct + app_incorrect
+		print("App: " + str(app) + " " + "Correct: " + str(app_correct / app_total) + " Incorrect: " + str(app_incorrect / app_total))
 	print("Overall: Correct: " + str(correct / (correct + incorrect)) + " Incorrect: " + str(incorrect / (correct + incorrect)))
 
 def create_classifier():
