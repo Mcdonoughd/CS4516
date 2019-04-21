@@ -53,14 +53,14 @@ class Burst:
 			return_str += self.int_to_time_str(int(self.last_time - self.start_time)) + " " + str(fs)
 		return return_str
 				
-	def classify_str(self, classifier, num_bursts):
+	def classify_str(self, classifier):
 		return_str = ""
 		first = True
 		for fs in self.flows:
 			if not first:
 				return_str += '\n'
 			first = False
-			return_str += self.int_to_time_str(int(self.last_time - self.start_time)) + " " + str(fs) + " " + fs.classify(classifier, num_bursts)
+			return_str += self.int_to_time_str(int(self.last_time - self.start_time)) + " " + str(fs) + " " + fs.classify(classifier, len(self.flows))
 		return return_str
 
 	def int_to_time_str(self, time):
@@ -70,7 +70,7 @@ class Burst:
 		return '%02d:%02d:%02d' % (hours, minutes, seconds)
 
 	def get_vectors(self):
-		return [flow.get_vector() for flow in self.flows]
+		return [flow.get_vector() + [len(self.flows)] for flow in self.flows]
 
 class Flow:
 	def __init__(self, protocol, src_a, src_p, dst_a, dst_p):
@@ -140,15 +140,14 @@ class FlowStats:
 	def get_std(self, length_array):
 		if len(length_array) > 1:
 			return statistics.stdev(length_array)
-		else:
-			return 0;
+		return 0
 
 
 	def get_vector(self):
 		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b, self.get_std(self.sent_length), self.get_std(self.recieved_length)] # TODO decide the best features to use
 	
-	def classify(self, classifier, num_bursts):
-		return classifier.classify([self.get_vector() + [num_bursts]])[0] 
+	def classify(self, classifier, num_flows):
+		return classifier.classify([self.get_vector() + [num_flows]])[0] 
 
 class CaptureClassifier:
 
@@ -160,7 +159,7 @@ class CaptureClassifier:
 		
 		file = open(file)
 		capture = pyshark.FileCapture(file, display_filter='tcp or udp and not arp')
-		for num_pkt, packet in enumerate(capture):
+		for _, packet in enumerate(capture):
 			self.packet_callback(packet)
 		
 		capture.close()
@@ -170,9 +169,8 @@ class CaptureClassifier:
 	def get_io_vectors(self, app):
 		training_in = [] 
 		for burst in self.bursts:
-			complete_vectors = [vector + [len(self.bursts)] for vector in burst.get_vectors()]
+			complete_vectors = [vector for vector in burst.get_vectors()]
 			training_in += complete_vectors
-			# training_in += burst.get_vectors() + [len(self.bursts)]
 		training_out = [app] * len(training_in)
 		return training_in, training_out
 		
@@ -212,7 +210,7 @@ class CaptureClassifier:
 		for burst in self.bursts:
 			print("\nBurst: "+str(i))
 			i+=1
-			print(burst.classify_str(classifier, len(self.bursts)))
+			print(burst.classify_str(classifier))
 
 class LiveClassifier:
     
@@ -249,7 +247,7 @@ class LiveClassifier:
 			new_burst = Burst(time, start_time=int(self.start_time))
 			self.bursts.append(new_burst)
 		if time - self.bursts[-1].last_time > 1:
-			print(self.bursts[-1].classify_str(self.classifier, len(self.bursts))) # TODO remove len(bursts from the training)
+			print(self.bursts[-1].classify_str(self.classifier))
 			new_burst = Burst(time, start_time=int(self.start_time))
 			self.bursts.append(new_burst)
 		self.bursts[-1].add_flow(time, length, flow)
@@ -280,58 +278,21 @@ class Classifier:
 
 #Global state
 #probably just move this to another class at some point
-app_list = ["browser", "youtube", "weather", "news", "ninja"]
-capture_range = [1, 36]
-analysis_range = [36, 51]
+
 
 def main():
 	input = sys.argv
+	app_list = ["browser", "youtube", "weather", "news", "ninja"]
+	capture_range = [1, 36, 51]
 	if len(input) < 2:
 		print("Capture file is required")
 	if len(input) == 2:
 		if input[1] == '-t':
-			print("Classifier Training")
-			v_in = []
-			v_out = []
-			data_path = "./data/"
-			for app in app_list:
-				app_path = data_path + app + "/"
-				for index in range(capture_range[0], capture_range[1]):
-					capture_path = app_path + "test" + str(index) + ".pcap"
-					capture = CaptureClassifier(capture_path, printing=False)
-					v_io = capture.get_io_vectors(app)
-					v_in += v_io[0]
-					v_out += v_io[1]
-			classifier = Classifier()
-			classifier.train(v_in, v_out)
-			classifier.save()
+			train_classifier(app_list, capture_range[0], capture_range[1])
 		elif input[1] == '-b':
-			print("Analyzing Classifier")
-			v_in = []
-			v_out = []
-			data_path = "./data/"
-			for app in app_list:
-				app_path = data_path + app + "/"
-				for index in range(analysis_range[0], analysis_range[1]):
-					capture_path = app_path + "test" + str(index) + ".pcap"
-					capture = CaptureClassifier(capture_path, printing=False)
-					v_io = capture.get_io_vectors(app)
-					v_in += v_io[0]
-					v_out += v_io[1]
-			classifier = Classifier()
-			output = classifier.classify(v_in)
-			correct = 0
-			incorrect = 0
-			for i in range(0, len(output)):
-				if v_out[i] == output[i]:
-					correct += 1
-				else:
-					incorrect += 1
-			print("Correct: " + str(correct / (correct + incorrect)) + " Incorrect: " + str(incorrect / (correct + incorrect)))
+			analyze_classifier(app_list, capture_range[1], capture_range[2])
 		elif input[1] == '-c':
-			print("Create New Classifier")
-			classifier = SVC(class_weight='balanced')
-			joblib.dump(classifier, "classifier_save.pkl")
+			create_classifier()
 		elif input[1] == '-l':
 			print("Live Classification")
 			capture = LiveClassifier()
@@ -341,6 +302,61 @@ def main():
 			capture.print_classified_bursts()
 	if len(input) > 2:
 		print("Too many arguments")
+
+def train_classifier(app_list, low, high):
+	print("Classifier Training")
+	v_in = []
+	v_out = []
+	data_path = "./data/"
+	for app in app_list:
+		app_path = data_path + app + "/"
+		for index in range(low, high):
+			capture_path = app_path + "test" + str(index) + ".pcap"
+			capture = CaptureClassifier(capture_path, printing=False)
+			v_io = capture.get_io_vectors(app)
+			v_in += v_io[0]
+			v_out += v_io[1]
+	classifier = Classifier()
+	classifier.train(v_in, v_out)
+	classifier.save()
+
+def analyze_classifier(app_list, low, high):
+	print("Analyzing Classifier")
+	v_in = []
+	v_out = []
+	data_path = "./data/"
+	for app in app_list:
+		app_path = data_path + app + "/"
+		for index in range(low, high):
+			capture_path = app_path + "test" + str(index) + ".pcap"
+			capture = CaptureClassifier(capture_path, printing=False)
+			v_io = capture.get_io_vectors(app)
+			v_in += v_io[0]
+			v_out += v_io[1]
+	classifier = Classifier()
+	output = classifier.classify(v_in)
+	correct = 0
+	correct_typed = {app: 0 for app in app_list}
+	incorrect = 0
+	incorrect_typed = {app: 0 for app in app_list}
+	for i in range(0, len(output)):
+		if v_out[i] == output[i]:
+			correct += 1
+			correct_typed[output[i]] += 1
+		else:
+			incorrect += 1
+			incorrect_typed[output[i]] += 1
+	for app in app_list:
+		app_correct = correct_typed[app] 
+		app_incorrect = incorrect_typed[app]
+		app_total = app_correct + app_incorrect
+		print("App: " + str(app) + " " + "Correct: " + str(app_correct / app_total) + " Incorrect: " + str(app_incorrect / app_total))
+	print("Overall: Correct: " + str(correct / (correct + incorrect)) + " Incorrect: " + str(incorrect / (correct + incorrect)))
+
+def create_classifier():
+	print("Create New Classifier")
+	classifier = SVC(class_weight='balanced')
+	joblib.dump(classifier, "classifier_save.pkl")
 
 if __name__ == "__main__":
 	main()
