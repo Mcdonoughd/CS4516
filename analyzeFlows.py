@@ -68,7 +68,11 @@ class Burst:
 		return '%02d:%02d:%02d' % (hours, minutes, seconds)
 
 	def get_vectors(self):
-		return [flow.get_vector() + [len(self.flows)] for flow in self.flows]
+		filtered_flows = [flow for flow in self.flows if flow.sent_p > 1  and flow.recieved_p > 1]
+		flow_vectors = [flow.get_vector() + [len(self.flows)] for flow in filtered_flows]
+		print(str(flow_vectors))
+		return flow_vectors
+	
 
 class Flow:
 	def __init__(self, protocol, src_a, src_p, dst_a, dst_p):
@@ -141,9 +145,10 @@ class FlowStats:
 
 
 	def get_vector(self):
-		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b, self.get_std(self.sent_length), self.get_std(self.recieved_length),len(self.all_flows) ] # TODO decide the best features to use
+		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b, self.get_std(self.sent_length), self.get_std(self.recieved_length),len(self.all_flows)]
 	
 	def classify(self, classifier, num_flows):
+		print(str([self.get_vector() + [num_flows]]))
 		return classifier.classify([self.get_vector() + [num_flows]])[0] 
 
 class CaptureClassifier:
@@ -272,13 +277,6 @@ class Classifier:
 		print("Classifying...")
 		X = numpy.array(vector_in)
 		return self.classifier.predict(X)
-
-
-#Global state
-#probably just move this to another class at some point
-app_list = ["browser", "youtube", "weather", "news", "ninja"]
-capture_range = [1, 36]
-analysis_range = [36, 51]
 
 #prints the help state
 def help():
