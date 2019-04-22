@@ -1,59 +1,53 @@
-###CS4516 Project
+# CS4516 Project
 
-##Phase 3 - classifyFlows.py
+## Phase 4 - analyzeFlows.py
 
-#Team 18 (Cole Winsor & Daniel McDonough)
+### Team 18 (Cole Winsor & Daniel McDonough)
 
-#Requirements
+### Requirements
 
 1. Python 3.6
 2. Memory was increased to be 1GB
 3. Below are the Required packages to be installed:
 
-  joblib==0.13.2
-
-  Logbook==1.4.3
-
-  lxml==4.3.3
-
-  numpy==1.16.2
-
-  py==1.8.0
-
-  pyshark==0.4.2.2
-
-  scikit-learn==0.20.3
-
-  scipy==1.2.1
-
-  sklearn==0.0
+* joblib==0.13.2 
+* Logbook==1.4.3
+* lxml==4.3.3
+* numpy==1.16.2
+* py==1.8.0
+* pyshark==0.4.2.2
+* scikit-learn==0.20.3
+* scipy==1.2.1
+* sklearn==0.0
 
 
 This can be done by
-`sudo python3.6 -m pip install sklearn`
+`sudo python3.6 -m pip install PACKAGE` 
 
 
-#How to Run
+### How to Run
 Once the Required packages are installed, you can run the code by
 `sudo python3.6 classifyFlows.py [option]`
 
 
 Options are as follows (you may only do one at a time):
-1. -t: This tells the script to read the saved classifier files and run the training data
-2. -c: Produces a saved classifier file 'classifier_save.pkl' in the root directory
-3. -b: This tells the script to read the saved classifier files and run the training data
-3. 'pcap file': Runs a pcap file to determine bursts and classify flows
+1. -t: This tells the script to load the saved classifier files and run the training data
+2. -c: Produces a new classifier file 'classifier_save.pkl' in the root directory
+3. -b: This tells the script to read the saved classifier files and run the testing data
+4. 'pcap file': Runs a pcap file to determine bursts and classify flows
+5. -l: This tells the program to run a live classification of the program
+6. -h: This prints the help function
 
-# Classification Limitations
+### Classification Limitations
 1. We only analyze 7 dimensions: number and sizes of packets sent and received, the standard deviation of the bytes sent and recieved, and the number of bursts in the file
 2. Because of the way Fruit ninja sends packets and its large diversity of packets, this classifier tends to mistake other packets for it.
 3. Due to this, our classifier is roughly 66% accurate.
 
-#How it works
+### How it works
 1. Collection of data
+
 All data collected was collected using tshark. A pcap trace started from when the app first launched, and there was a significant pause between bursts, a human intervened to end the pcap trace.
 
-Notes:
 - Location was rejected when asked
 - Between each test, all background apps were cleared
 - News size varied depending on if the highlighted new was video or text
