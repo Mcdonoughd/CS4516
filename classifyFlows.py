@@ -276,10 +276,6 @@ class Classifier:
 		return self.classifier.predict(X)
 
 
-#Global state
-#probably just move this to another class at some point
-
-
 def main():
 	input = sys.argv
 	app_list = ["browser", "youtube", "weather", "news", "ninja"]
