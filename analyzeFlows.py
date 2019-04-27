@@ -68,7 +68,10 @@ class Burst:
 		return '%02d:%02d:%02d' % (hours, minutes, seconds)
 
 	def get_vectors(self):
-		return [flow.get_vector() + [len(self.flows)] for flow in self.flows]
+		filtered_flows = [flow for flow in self.flows if flow.sent_p > 1  and flow.recieved_p > 1]
+		flow_vectors = [flow.get_vector() + [len(self.flows)] for flow in filtered_flows]
+		return flow_vectors
+	
 
 class Flow:
 	def __init__(self, protocol, src_a, src_p, dst_a, dst_p):
@@ -141,7 +144,7 @@ class FlowStats:
 
 
 	def get_vector(self):
-		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b, self.get_std(self.sent_length), self.get_std(self.recieved_length),len(self.all_flows) ] # TODO decide the best features to use
+		return [self.sent_p, self.sent_b, self.recieved_p, self.recieved_b, self.get_std(self.sent_length), self.get_std(self.recieved_length),len(self.all_flows)]
 	
 	def classify(self, classifier, num_flows):
 		return classifier.classify([self.get_vector() + [num_flows]])[0] 
@@ -166,9 +169,8 @@ class CaptureClassifier:
 	def get_io_vectors(self, app):
 		training_in = [] 
 		for burst in self.bursts:
-			complete_vectors = [vector + [len(self.bursts)] for vector in burst.get_vectors()]
+			complete_vectors = [vector for vector in burst.get_vectors()]
 			training_in += complete_vectors
-			# training_in += burst.get_vectors() + [len(self.bursts)]
 		training_out = [app] * len(training_in)
 		return training_in, training_out
 		
@@ -255,7 +257,6 @@ class Classifier:
 	def __init__(self):
 		self.path = 'classifier_save.pkl'
 		self.classifier = joblib.load(self.path)
-		print("Loading Classifier")
 
 	def train(self, vector_in, vector_out):
 		print("Training Classifier")
@@ -269,16 +270,8 @@ class Classifier:
 		print("Saving Classifier")
 
 	def classify(self, vector_in):
-		print("Classifying...")
 		X = numpy.array(vector_in)
 		return self.classifier.predict(X)
-
-
-#Global state
-#probably just move this to another class at some point
-app_list = ["browser", "youtube", "weather", "news", "ninja"]
-capture_range = [1, 36]
-analysis_range = [36, 51]
 
 #prints the help state
 def help():
@@ -347,10 +340,10 @@ def analyze_classifier(app_list, low, high):
 	for i in range(0, len(output)):
 		if v_out[i] == output[i]:
 			correct += 1
-			correct_typed[output[i]] += 1
+			correct_typed[v_out[i]] += 1
 		else:
 			incorrect += 1
-			incorrect_typed[output[i]] += 1
+			incorrect_typed[v_out[i]] += 1
 	for app in app_list:
 		app_correct = correct_typed[app] 
 		app_incorrect = incorrect_typed[app]
